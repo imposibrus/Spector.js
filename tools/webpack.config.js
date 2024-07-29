@@ -3,6 +3,7 @@ var path = require("path");
 var MAIN_DIR = path.resolve(__dirname, "../");
 var BUILD_DIR = path.resolve(MAIN_DIR, "./dist");
 var DEV_DIR = path.resolve(MAIN_DIR, "./.temp");
+var cloneDeep = require("clone-deep");
 
 var buildConfig = function(env) {
     var isProd = env.prod;
@@ -25,9 +26,10 @@ var buildConfig = function(env) {
             path: isProd ? BUILD_DIR : DEV_DIR,
             publicPath: "/",
             filename: "[name].bundle.js",
-            libraryTarget: "umd",
-            library: "SPECTOR",
-            umdNamedDefine: true
+            libraryTarget: "module",
+        },
+        experiments: {
+            outputModule: true,
         },
         performance: {
             hints: false
@@ -35,7 +37,7 @@ var buildConfig = function(env) {
         resolve: {
             extensions: [".ts", ".tsx", ".js", ".css", ".sass"]
         },
-        devtool: false,
+        devtool: 'nosources-source-map',
         mode: isProd ? "production" : "development",
         module: {
             rules: [{
@@ -82,7 +84,18 @@ var buildConfig = function(env) {
         };
     }
 
-    return config;
+    var extensionConfig = cloneDeep(config);
+
+    extensionConfig.output.path = path.resolve(MAIN_DIR, "./extensions");
+    extensionConfig.output.libraryTarget = "umd";
+    extensionConfig.output.library = "SPECTOR";
+    extensionConfig.output.umdNamedDefine = true;
+    delete extensionConfig.experiments;
+
+    return [
+        config,
+        extensionConfig,
+    ];
 }
 
 module.exports = buildConfig;
